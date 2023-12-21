@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>食在健康</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #faf4e0;
+      margin: 0;
+    }
+
+    p {
+      font-size: 20px;
+    }
+
+    header {
+      background-color: #1b403d;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    header p {
+      color: #ffffff;
+      margin: 0;
+      font-weight: bolder;
+      font-size: 40px;
+    }
+
+    #menu-info {
+      margin: 20px auto;
+      padding: 20px;
+      border: 5px #1b403c solid;
+      width: 50%;
+      background-color: #ffffff;
+      display: none;
+    }
+
+    #menu-info h2 {
+      text-align: center;
+    }
+
+    #result image {
+      width: 200px;
+    }
+
+    #showResult {
+      display: flex;
+      justify-content: space-around;
+      align-items: stretch;
+    }
+
+    #result {
+      margin: 20px;
+      text-align: left;
+    }
+
+    #sportImg {
+      max-height: 200px;
+      display: none;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .customFileInput {
+      background-color: #7dc699;
+      display: inline-block;
+      padding: 10px 15px;
+      font-weight: bold;
+    }
+
+    button {
+      background-color: #7dc699;
+      display: inline-block;
+      padding: 10px 15px;
+      font-weight: bold;
+      font-size: 16px;
+      border: 0;
+      font-size: 18px;
+    }
+
+    table {
+      margin: auto auto;
+      width: 50%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th,
+    td {
+      font-size: 18px;
+      border: 0;
+      padding: 8px;
+      text-align: left;
+    }
+
+    #selectedImage {
+      /* max-width: 400px; */
+      float: right;
+      max-width: 320px;
+      max-height: 180px;
+      width: auto;
+      height: auto;
+    }
+
+    #input-weight {
+      background-color: #ffffff;
+      display: inline-block;
+      padding: 10px 15px;
+      font-weight: bold;
+      font-size: 16px;
+      border: 0;
+    }
+
+    #resultCanvas {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <p>食在健康</p>
+  </header>
+
+  <input type="file" id="imageUpload" accept="image/*" onchange="processImage()" />
+  <table>
+    <tr>
+      <th>請上傳要查詢的便當圖片</th>
+      <td>
+        <label for="imageUpload" class="customFileInput">選擇檔案</label>
+      </td>
+      <td rowspan="2">
+        <img id="selectedImage" src="https://i.imgur.com/dRfOZJV.png" style="max-width: 400px" />
+      </td>
+    </tr>
+    <tr>
+      <th>請輸入體重(公斤)：</th>
+      <td>
+        <input type="text" id="input-weight" placeholder="請輸入體重" />
+      </td>
+    </tr>
+  </table>
+
+  <br />
+  <button onclick="processImageAndQueryMenu()">查詢菜單</button>
+  <div id="predictionResult"></div>
+
+  <div id="menu-info">
+    <h2>辨識結果</h2>
+    <div id="showResult">
+      <div id="result"></div>
+      <img id="sportImg"
+        src="https://2.bp.blogspot.com/-IWW6PkcuSb8/VGLMlK1eO0I/AAAAAAAApC4/JsXofanomsA/s800/rikujou_woman_marathon.png" />
+    </div>
+  </div>
+
+  <br />
+  <canvas id="resultCanvas" style="max-width: 400px; display: none"></canvas>
+  <script>
+    const menu = {
+      番茄炒蛋: {
+        卡路里: 123,
+        蛋白質: 10,
+      },
+      玉米炒蛋: {
+        卡路里: 160,
+        蛋白質: 18,
+      },
+      三杯茄子: {
+        卡路里: 320,
+        蛋白質: 5,
+      },
+      咖哩: {
+        卡路里: 120,
+        蛋白質: 12,
+      },
+      炒海茸: {
+        卡路里: 150,
+        蛋白質: 20,
+      },
+      宮保雞丁: {
+        卡路里: 350,
+        蛋白質: 25,
+      },
+      椒麻雞: {
+        卡路里: 280,
+        蛋白質: 22,
+      },
+      蘿蔔滷肉: {
+        卡路里: 210,
+        蛋白質: 10,
+      },
+      炒瓜類: {
+        卡路里: 150,
+        蛋白質: 8,
+      },
+      花椰菜: {
+        卡路里: 66,
+        蛋白質: 5,
+      },
+      炒青菜: {
+        卡路里: 75,
+        蛋白質: 3,
+      },
+      炒苦瓜: {
+        卡路里: 80,
+        蛋白質: 4,
+      },
+      高麗菜: {
+        卡路里: 75,
+        蛋白質: 2,
+      },
+
+      // Add more menu items here...
+    };
+
+    function processImage() {
+      var selectedImage = document.getElementById("selectedImage");
+      var files = document.getElementById("imageUpload").files;
+      selectedImage.src = URL.createObjectURL(files[0]);
+      document.getElementById("menu-info").style.display = "none";
+    }
+
+    function processImageAndQueryMenu() {
+      document.getElementById("result").innerHTML = "";
+      document.getElementById("menu-info").style.display = "none";
+      var weight = document.getElementById("input-weight").value;
+      // var selectedImage = document.getElementById("selectedImage");
+      var resultCanvas = document.getElementById("resultCanvas");
+      var resultCanvasCtx = resultCanvas.getContext("2d");
+      document.getElementById("predictionResult").innerText = "";
+
+      var files = document.getElementById("imageUpload").files;
+
+      // 檢查是否選擇了檔案和是否輸入了體重
+      if (files.length === 0 && weight.trim() === "") {
+        alert("請選擇檔案並輸入體重");
+        return;
+      } else if (files.length === 0) {
+        alert("請選擇檔案");
+        return;
+      } else if (weight.trim() === "") {
+        alert("請輸入體重");
+        return;
+      } else if (isNaN(Number(weight.trim()))) {
+        alert("請輸入有效的數字體重");
+        return;
+      }
+
+      var file = files[0];
+      // selectedImage.src = URL.createObjectURL(file);
+
+      predictImageAndQueryMenu(file, weight, resultCanvasCtx);
+    }
+
+    function predictImageAndQueryMenu(file, weight, resultCanvasCtx) {
+      var formData = new FormData();
+      formData.append("image", file);
+      var requestOptions = {
+        method: "POST",
+        headers: {
+          "Prediction-Key": apikey,
+        },
+        body: formData,
+      };
+
+      fetch(apiUrl, requestOptions)
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (data) {
+          displayPrediction(data);
+          drawBoundingBoxes(selectedImage, data.predictions, resultCanvasCtx);
+          var highConfidencePredictions = data.predictions.filter(
+            (prediction) => prediction.probability * 100 > 90
+          );
+          if (highConfidencePredictions.length > 0) {
+            queryMenu(weight, data);
+          }
+        })
+        .catch(function (error) {
+          console.error("Error:", error);
+        });
+    }
+
+    // 圖片連結辨識
+    // function predictImageUrlAndQueryMenu(imageUrl, weight, resultCanvasCtx) {
+    //     var requestData = JSON.stringify({ Url: imageUrl });
+    //     var requestOptions = {
+    //         method: "POST",
+    //         headers: {
+    //             "Content-Type": "application/json",
+    //             "Prediction-Key": apikey,
+    //         },
+    //         body: requestData,
+    //     };
+
+    //     fetch(apiUrl, requestOptions)
+    //         .then(function (response) {
+    //             return response.json();
+    //         })
+    //         .then(function (data) {
+    //             displayPrediction(data);
+    //             drawBoundingBoxes(selectedImage, data.predictions, resultCanvasCtx);
+    //             var highConfidencePredictions = data.predictions.filter(prediction => prediction.probability * 100 > 90);
+    //             if (highConfidencePredictions.length > 0) {
+    //                 queryMenu(weight, data);
+    //             }
+    //         })
+    //         .catch(function (error) {
+    //             console.error("Error:", error);
+    //         });
+    // }
+
+    function queryMenu(weight, data) {
+      document.getElementById("menu-info").style.display = "block";
+      const recognizedTags = data.predictions
+        .filter((prediction) => prediction.probability * 100 > 90)
+        .map((prediction) => prediction.tagName);
+      const menuInfo = document.getElementById("result");
+      let 總卡路里 = 0;
+      let 總蛋白質 = 0;
+      let 結果HTML = "";
+      // let 結果HTML = `<h2>辨識結果</h2>`;
+
+      for (const 菜名 of recognizedTags) {
+        const 菜品 = menu[菜名];
+        if (菜品) {
+          const 卡路里 = 菜品.卡路里;
+          const 蛋白質 = 菜品.蛋白質;
+          總卡路里 += 卡路里;
+          總蛋白質 += 蛋白質;
+          結果HTML += `<p>${菜名} 的卡路里數是 ${卡路里} 卡路里，蛋白質含量為 ${蛋白質} 克。</p>`;
+        } else {
+          結果HTML += `<p>抱歉，找不到相應的菜單數據：${菜名}</p>`;
+        }
+      }
+
+      const 體重 = parseFloat(weight);
+      const METs = 8; // Assuming slow jog has a MET value of 8
+      const 活動時間 = 總卡路里 / ((體重 * METs) / 60);
+      結果HTML += `<p>總卡路里: ${總卡路里} 卡路里，總蛋白質: ${總蛋白質} 克。</p>`;
+      結果HTML += `<p>預計慢跑時間: ${活動時間.toFixed(2)} 分鐘。</p>`;
+      // 結果HTML += `<img
+      // src="https://2.bp.blogspot.com/-IWW6PkcuSb8/VGLMlK1eO0I/AAAAAAAApC4/JsXofanomsA/s800/rikujou_woman_marathon.png"
+      // style="max-width: 250px;">`;
+      menuInfo.innerHTML = 結果HTML;
+    }
+
+    function displayPrediction(data) {
+      var resultElement = document.getElementById("result");
+      document.getElementById("menu-info").style.display = "block";
+      resultElement.innerHTML = "";
+      console.log("圖像辨識結果：");
+      // console.log(data.predictions)
+      // console.log(data.predictions.length)
+      if (data && data.predictions && data.predictions.length > 0) {
+        let isAnyDish = false;
+        for (var i = 0; i < data.predictions.length; i++) {
+          var prediction = data.predictions[i];
+          if (prediction.probability * 100 > 90) {
+            // Check if confidence is greater than 90%
+            // resultElement.innerHTML += `<p>${prediction.tagName}: ${(prediction.probability * 100).toFixed(2)}%</p>`;
+            console.log(
+              `${prediction.tagName}: ${(
+                prediction.probability * 100
+              ).toFixed(2)}%`
+            );
+            isAnyDish = true;
+          }
+        }
+        if (!isAnyDish) {
+          console.log("未能識別圖像。");
+          resultElement.innerHTML += `<p>未能辨識圖像。</p>`;
+          document.getElementById("sportImg").style.display = "none";
+        } else {
+          document.getElementById("sportImg").style.display = "block";
+        }
+      } else {
+        // resultElement.innerHTML += "<p>未能識別圖像。</p>";
+        console.log("未能辨識圖像。");
+        resultElement.innerHTML = `<p>未能辨識圖像。</p>`;
+        document.getElementById("sportImg").style.display = "none";
+      }
+    }
+
+    // Add your API key and endpoint here
+    const apikey = "3db28b68f02b45568fcf3db00d99ff53";
+    const apiUrl =
+      "https://southcentralus.api.cognitive.microsoft.com/customvision/v3.0/Prediction/f752a9d5-18b0-4ba5-a8a5-ebe87c64ab6c/detect/iterations/Iteration3/image";
+
+    function drawBoundingBoxes(image, predictions, resultCanvasCtx) {
+      resultCanvasCtx.clearRect(
+        0,
+        0,
+        resultCanvasCtx.canvas.width,
+        resultCanvasCtx.canvas.height
+      );
+      const imageWidth = image.width;
+      const imageHeight = image.height;
+      resultCanvasCtx.canvas.width = imageWidth;
+      resultCanvasCtx.canvas.height = imageHeight;
+      resultCanvasCtx.drawImage(image, 0, 0, imageWidth, imageHeight);
+
+      for (let i = 0; i < predictions.length; i++) {
+        const prediction = predictions[i];
+        const tag = prediction.tagName;
+        const bbox = prediction.boundingBox;
+        const confidence = prediction.probability * 100;
+
+        if (confidence > 90) {
+          // Check if confidence is greater than 90%
+          const x = bbox.left * imageWidth;
+          const y = bbox.top * imageHeight;
+          const width = bbox.width * imageWidth;
+          const height = bbox.height * imageHeight;
+
+          resultCanvasCtx.strokeStyle = "#00FF00";
+          resultCanvasCtx.font = "16px Arial";
+          resultCanvasCtx.lineWidth = 2;
+          resultCanvasCtx.fillStyle = "#00FF00";
+          resultCanvasCtx.fillText(
+            `${tag} (${confidence.toFixed(2)}%)`,
+            x,
+            y > 10 ? y - 10 : 10
+          );
+          resultCanvasCtx.strokeRect(x, y, width, height);
+        }
+      }
+
+      // resultCanvasCtx.canvas.style.display = "block";
+    }
+  </script>
+</body>
+
+</html>
